@@ -1,0 +1,11 @@
+{
+  "name": "FireBaseTest",
+  "version": "1.0.0",
+  "uuid": "6c84a9cc-49d7-44fb-bc49-badcb777bb46",
+  "creator": {
+    "version": "3.7.3"
+  },
+  "dependencies": {
+    "firebase": "^11.10.0"
+  }
+}
