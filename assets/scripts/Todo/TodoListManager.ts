@@ -1,8 +1,8 @@
 import { _decorator, Button, Component, EditBox, instantiate, Node } from 'cc';
-import { initFirebase, loadTodoList, saveTodoList } from './FirebaseManager';
-import { MakeEventHandler, UIHandler } from './Utils';
+import { initFirebase, loadTodoList, saveTodoList } from '../FirebaseManager';
+import { MakeEventHandler, UIHandler } from '../Utils';
 import { TodoListItem } from './TodoListItem';
-import { TodoData } from './Define';
+import { TodoData } from '../Define';
 const { ccclass, property } = _decorator;
 
 @ccclass('TodoListManager')

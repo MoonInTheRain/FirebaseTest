@@ -1,5 +1,5 @@
 import { _decorator, Button, Component, Label, Node, Toggle } from 'cc';
-import { MakeEventHandler, UIHandler } from './Utils';
+import { MakeEventHandler, UIHandler } from '../Utils';
 const { ccclass, property } = _decorator;
 
 @ccclass('TodoListItem')
