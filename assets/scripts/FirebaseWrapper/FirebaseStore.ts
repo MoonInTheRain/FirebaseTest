@@ -1,6 +1,6 @@
 // @ts-ignore
 import firebaseStoreCJS from "../../../node_modules/@firebase/firestore/dist/index.cjs.js";
-import { DocumentData, DocumentReference, WithFieldValue, PartialWithFieldValue, SetOptions, CollectionReference, Firestore, FieldValue, DocumentSnapshot } from "../../../node_modules/@firebase/firestore/dist/index";
+import { DocumentData, DocumentReference, WithFieldValue, PartialWithFieldValue, SetOptions, CollectionReference, Firestore, FieldValue, DocumentSnapshot, Query, QuerySnapshot } from "../../../node_modules/@firebase/firestore/dist/index";
 import { FirebaseApp } from "../../../node_modules/@firebase/app/dist/app";
 
 /**
@@ -105,6 +105,78 @@ export function doc<AppModelType, DbModelType extends DocumentData>(reference: D
 
 export function doc(reference, path, ...n): DocumentReference<DocumentData, DocumentData> {
     return firebaseStoreCJS.doc(reference, path, ...n);
+}
+
+/**
+ * Executes the query and returns the results as a `QuerySnapshot`.
+ *
+ * Note: `getDocs()` attempts to provide up-to-date data when possible by
+ * waiting for data from the server, but it may return cached data or fail if
+ * you are offline and the server cannot be reached. To specify this behavior,
+ * invoke {@link getDocsFromCache} or {@link getDocsFromServer}.
+ *
+ * @returns A `Promise` that will be resolved with the results of the query.
+ */
+export function getDocs<AppModelType, DbModelType extends DocumentData>(query: Query<AppModelType, DbModelType>): Promise<QuerySnapshot<AppModelType, DbModelType>> {
+    return firebaseStoreCJS.getDocs(query);
+}
+
+/**
+ * Gets a `CollectionReference` instance that refers to the collection at
+ * the specified absolute path.
+ *
+ * @param firestore - A reference to the root `Firestore` instance.
+ * @param path - A slash-separated path to a collection.
+ * @param pathSegments - Additional path segments to apply relative to the first
+ * argument.
+ * @throws If the final path has an even number of segments and does not point
+ * to a collection.
+ * @returns The `CollectionReference` instance.
+ */
+export function collection(firestore: Firestore, path: string, ...pathSegments: string[]): CollectionReference<DocumentData, DocumentData>;
+/**
+ * Gets a `CollectionReference` instance that refers to a subcollection of
+ * `reference` at the specified relative path.
+ *
+ * @param reference - A reference to a collection.
+ * @param path - A slash-separated path to a collection.
+ * @param pathSegments - Additional path segments to apply relative to the first
+ * argument.
+ * @throws If the final path has an even number of segments and does not point
+ * to a collection.
+ * @returns The `CollectionReference` instance.
+ */
+export function collection<AppModelType, DbModelType extends DocumentData>(reference: CollectionReference<AppModelType, DbModelType>, path: string, ...pathSegments: string[]): CollectionReference<DocumentData, DocumentData>;
+/**
+ * Gets a `CollectionReference` instance that refers to a subcollection of
+ * `reference` at the specified relative path.
+ *
+ * @param reference - A reference to a Firestore document.
+ * @param path - A slash-separated path to a collection.
+ * @param pathSegments - Additional path segments that will be applied relative
+ * to the first argument.
+ * @throws If the final path has an even number of segments and does not point
+ * to a collection.
+ * @returns The `CollectionReference` instance.
+ */
+export function collection<AppModelType, DbModelType extends DocumentData>(reference: DocumentReference<AppModelType, DbModelType>, path: string, ...pathSegments: string[]): CollectionReference<DocumentData, DocumentData>;
+
+export function collection(reference, path: string, ...pathSegments: string[]): CollectionReference<DocumentData, DocumentData> {
+    return firebaseStoreCJS.collection(reference, path, ...pathSegments);
+}
+
+/**
+ * Add a new document to specified `CollectionReference` with the given data,
+ * assigning it a document ID automatically.
+ *
+ * @param reference - A reference to the collection to add this document to.
+ * @param data - An Object containing the data for the new document.
+ * @returns A `Promise` resolved with a `DocumentReference` pointing to the
+ * newly created document after it has been written to the backend (Note that it
+ * won't resolve while you're offline).
+ */
+export function addDoc<AppModelType, DbModelType extends DocumentData>(reference: CollectionReference<AppModelType, DbModelType>, data: WithFieldValue<AppModelType>): Promise<DocumentReference<AppModelType, DbModelType>> {
+    return firebaseStoreCJS.addDoc(reference, data);
 }
 
 /**

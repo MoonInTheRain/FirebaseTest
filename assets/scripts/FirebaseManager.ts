@@ -1,6 +1,6 @@
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { doc, getDoc, getFirestore, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAXej2b2FrBVZqOKjUjjERGM2XioQuPEM0",
@@ -52,4 +52,28 @@ export async function loadTodoList(): Promise<object> {
         return docSnap.data();
     }
     return [];
+}
+
+export async function loadRoomList(): Promise<object> {
+    if (!db) return;
+    const docSnap = await getDocs(collection(db, "chats"));
+    const rooms = docSnap.docs.map(doc => ({
+        roomId: doc.id,
+        ...doc.data()
+    }));
+    return rooms;
+}
+
+export async function addRoom(name: string): Promise<string> {
+    if (!db) { return; }
+    const roomsRef = collection(db, "chats");
+
+    const newRoom = {
+        name: name,
+        ownerId: auth.currentUser?.uid || "anonymous",
+        createdAt: serverTimestamp(),
+    };
+
+    const docRef = await addDoc(roomsRef, newRoom);
+    return docRef.id;
 }
