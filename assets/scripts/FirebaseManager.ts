@@ -1,6 +1,9 @@
+import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { addDoc, collection, doc, getDoc, getDocs, getFirestore, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
+import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
+import { Auth } from "@firebase/auth/dist/browser-cjs";
+import { FirebaseApp } from "firebase/app";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAXej2b2FrBVZqOKjUjjERGM2XioQuPEM0",
@@ -8,7 +11,7 @@ const firebaseConfig = {
     projectId: "litegame-df1fe",
 };
 
-let app, auth, db;
+let app: FirebaseApp, auth: Auth, db: Firestore;
 let currentUID = null;
 
 export async function initFirebase(): Promise<void> {
@@ -77,3 +80,25 @@ export async function addRoom(name: string): Promise<string> {
     const docRef = await addDoc(roomsRef, newRoom);
     return docRef.id;
 }
+
+export function connectRoom(roomId: string, onNewMessage: (msg: any) => void): Unsubscribe {
+    const messagesRef = collection(db, "chats", roomId, "messages");
+    const q = query(messagesRef, orderBy("createdAt", "asc"));
+    return onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                onNewMessage(change.doc.data());
+            }
+        });
+    });
+}
+
+export async function sendMessage(roomId: string, text: string) {
+    const messagesRef = collection(db, "chats", roomId, "messages");
+    const senderId = auth.currentUser?.uid || "anonymous";
+    await addDoc(messagesRef, {
+        text,
+        senderId,
+        createdAt: new Date()
+    });
+};

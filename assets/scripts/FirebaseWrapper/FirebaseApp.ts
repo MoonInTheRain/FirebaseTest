@@ -1,5 +1,5 @@
 import firebaseAppCJS  from '../../../node_modules/@firebase/app/dist/index.cjs.js';
-import { FirebaseApp, FirebaseOptions, FirebaseAppSettings } from "../../../node_modules/@firebase/app/dist/app";
+import { FirebaseApp, FirebaseOptions, FirebaseAppSettings } from "firebase/app";
 
 /**
  * Creates and initializes a {@link @firebase/app#FirebaseApp} instance.

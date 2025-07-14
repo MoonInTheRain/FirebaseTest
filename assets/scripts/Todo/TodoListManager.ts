@@ -2,7 +2,7 @@ import { _decorator, Button, Component, EditBox, instantiate, Node } from 'cc';
 import { initFirebase, loadTodoList, saveTodoList } from '../FirebaseManager';
 import { MakeEventHandler, UIHandler } from '../Utils';
 import { TodoListItem } from './TodoListItem';
-import { TodoData } from '../Define';
+
 const { ccclass, property } = _decorator;
 
 @ccclass('TodoListManager')
@@ -14,9 +14,7 @@ export class TodoListManager extends Component {
     private addButton: Button;
 
     @property(TodoListItem)
-    private itemBase: TodoListItem
-
-    private items: TodoListItem[] = [];
+    private itemBase: TodoListItem;
 
     async start() {
         await initFirebase(); // Firebase初期化＆匿名ログイン
@@ -24,7 +22,7 @@ export class TodoListManager extends Component {
         const data = await loadTodoList();
         this.initList(data);
 
-        this.addButton.clickEvents.push(MakeEventHandler(this, this.addItem))
+        this.addButton.clickEvents.push(MakeEventHandler(this, this.addItem));
     }
 
     private initList(data: object): void {
