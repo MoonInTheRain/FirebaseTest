@@ -87,7 +87,9 @@ export function connectRoom(roomId: string, onNewMessage: (msg: any) => void): U
     return onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
-                onNewMessage(change.doc.data());
+                const data = change.doc.data();
+                data.isMine = data.senderId == auth.currentUser?.uid;
+                onNewMessage(data);
             }
         });
     });
@@ -95,10 +97,9 @@ export function connectRoom(roomId: string, onNewMessage: (msg: any) => void): U
 
 export async function sendMessage(roomId: string, text: string) {
     const messagesRef = collection(db, "chats", roomId, "messages");
-    const senderId = auth.currentUser?.uid || "anonymous";
     await addDoc(messagesRef, {
-        text,
-        senderId,
-        createdAt: new Date()
+        message: text,
+        senderId: auth.currentUser?.uid || "anonymous",
+        createdAt: serverTimestamp()
     });
 };
