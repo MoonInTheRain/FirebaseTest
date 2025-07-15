@@ -1,6 +1,9 @@
 import { FirebaseApp } from 'firebase/app';
-import { Database, DatabaseReference, DataSnapshot, Query, ThenableReference } from "firebase/database"
-import firebaseDatabaseCJS  from '../../../node_modules/@firebase/database/dist/index.cjs.js';
+import { Database, DatabaseReference, DataSnapshot, Query, ThenableReference } from "firebase/database";
+import firebaseDatabaseCJS from '../../../node_modules/@firebase/database/dist/index.cjs.js';
+
+// Node.jsの環境変数を偽装する。
+(window as any).process = { env: { NODE_ENV: "production" } };
 
 /**
  * Returns the instance of the Realtime Database SDK that is associated with the provided

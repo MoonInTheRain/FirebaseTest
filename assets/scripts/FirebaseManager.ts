@@ -1,12 +1,12 @@
 import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
+import { Database } from "firebase/database";
+import { GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
+import { get, getDatabase, push, ref, serverTimestampAtDB, set } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
-import { getDatabase, ref, push, set, serverTimestampAtDB, get } from "./FirebaseWrapper/FirebaseDatabase";
-import { GomokuData, GomokuDataWithId } from "./Define";
-import { Database } from "firebase/database";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAXej2b2FrBVZqOKjUjjERGM2XioQuPEM0",
