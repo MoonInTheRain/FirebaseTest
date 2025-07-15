@@ -1,11 +1,11 @@
 import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
-import { Database } from "firebase/database";
+import { Database, DataSnapshot } from "firebase/database";
 import { GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { get, getDatabase, push, ref, serverTimestampAtDB, set } from "./FirebaseWrapper/FirebaseDatabase";
+import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 
 const firebaseConfig = {
@@ -22,6 +22,7 @@ export async function initFirebase(): Promise<void> {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+    rdb = getDatabase(app);
 
     return new Promise<void>((resolve, reject) => {
         onAuthStateChanged(auth, async (user) => {
@@ -108,9 +109,12 @@ export async function sendMessage(roomId: string, text: string) {
     });
 };
 
+export function getUserId() : string {
+    return auth.currentUser?.uid || "anonymous";
+}
+
 export async function getGomokuRooms(): Promise<GomokuDataWithId[]> {
-    const realtimeDB = getDatabase(app);
-    const roomsRef = ref(realtimeDB, "rooms");
+    const roomsRef = ref(rdb, "rooms");
 
     const snapshot = await get(roomsRef);
     if (!snapshot.exists()) {
@@ -137,9 +141,8 @@ function initialBoard(): (null | 'black' | 'white')[][] {
 }
 
 export async function createRoomByBlack(roomName: string): Promise<GomokuDataWithId> {
-    const db = getDatabase(app);
     // "rooms" の下に自動生成IDを持つノードを作成
-    const roomRef = push(ref(db, "rooms"));
+    const roomRef = push(ref(rdb, "rooms"));
     const newData: GomokuDataWithId = {
         roomId: roomRef.key,
         name: roomName,
@@ -152,4 +155,10 @@ export async function createRoomByBlack(roomName: string): Promise<GomokuDataWit
     };
     await set(roomRef, newData);
     return newData;
+}
+
+export function connectGomokuRoom(roomId: string, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): () => void {
+    const roomRef = ref(rdb, `rooms/${roomId}`);
+    onChildChanged(roomRef, callback);
+    return () => off(roomRef, "child_changed", callback);
 }

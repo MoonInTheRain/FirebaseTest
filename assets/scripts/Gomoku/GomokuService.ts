@@ -1,4 +1,6 @@
-import { connectRoom, sendMessage } from "../FirebaseManager";
+import { DataSnapshot } from "firebase/database";
+import { connectGomokuRoom, sendMessage } from "../FirebaseManager";
+import { GomokuDataWithId } from "../Define";
 
 export class GomokuService {
     private constructor() {}
@@ -9,23 +11,24 @@ export class GomokuService {
         return this._instance;
     }
 
-    private _roomId: string;
+    private _room: GomokuDataWithId;
     private charUnsubscribe: () => void;
 
-    public setRoomId(roomId: string): void {
-        this._roomId = roomId;
+    public get roomData(): GomokuDataWithId {
+        return this._room;
     }
 
-    public connectRoom(onNewMessage: (msg: any) => void): void {
-        this.charUnsubscribe = connectRoom(this._roomId, onNewMessage);
+    public setRoomData(room: GomokuDataWithId): void {
+        this._room = room;
+    }
+
+    public connectRoom(onNewMessage: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): void {
+        this.charUnsubscribe = connectGomokuRoom(this._room.roomId, onNewMessage);
     }
 
     public disconnectRoom(): void {
         this.charUnsubscribe?.();
         this.charUnsubscribe = undefined;
-    }
-
-    public sendMessage(message: string): void {
-        sendMessage(this._roomId, message);
+        this._room = undefined;
     }
 }

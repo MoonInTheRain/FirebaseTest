@@ -1,5 +1,5 @@
 import { FirebaseApp } from 'firebase/app';
-import { Database, DatabaseReference, DataSnapshot, Query, ThenableReference } from "firebase/database";
+import { Database, DatabaseReference, DataSnapshot, EventType, Query, ThenableReference, Unsubscribe } from "firebase/database";
 import firebaseDatabaseCJS from '../../../node_modules/@firebase/database/dist/index.cjs.js';
 
 // Node.jsの環境変数を偽装する。
@@ -109,6 +109,64 @@ export function set(ref, value) {
 export async function get(query: Query): Promise<DataSnapshot> {
     return await firebaseDatabaseCJS.get(query);
 }
+/**
+ * Listens for data changes at a particular location.
+ *
+ * This is the primary way to read data from a Database. Your callback
+ * will be triggered for the initial data and again whenever the data changes.
+ * Invoke the returned unsubscribe callback to stop receiving updates. See
+ * {@link https://firebase.google.com/docs/database/web/retrieve-data | Retrieve Data on the Web}
+ * for more details.
+ *
+ * An `onChildChanged` event will be triggered when the data stored in a child
+ * (or any of its descendants) changes. Note that a single `child_changed` event
+ * may represent multiple changes to the child. The `DataSnapshot` passed to the
+ * callback will contain the new child contents. For ordering purposes, the
+ * callback is also passed a second argument which is a string containing the
+ * key of the previous sibling child by sort order, or `null` if it is the first
+ * child.
+ *
+ * @param query - The query to run.
+ * @param callback - A callback that fires when the specified event occurs.
+ * The callback will be passed a DataSnapshot and a string containing the key of
+ * the previous child, by sort order, or `null` if it is the first child.
+ * @param cancelCallback - An optional callback that will be notified if your
+ * event subscription is ever canceled because your client does not have
+ * permission to read this data (or it had permission but has now lost it).
+ * This callback will be passed an `Error` object indicating why the failure
+ * occurred.
+ * @returns A function that can be invoked to remove the listener.
+ */
+export function onChildChanged(query: Query, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown, cancelCallback?: (error: Error) => unknown): Unsubscribe {
+    return firebaseDatabaseCJS.onChildChanged(query, callback, cancelCallback);
+}
+/**
+ * Detaches a callback previously attached with the corresponding `on*()` (`onValue`, `onChildAdded`) listener.
+ * Note: This is not the recommended way to remove a listener. Instead, please use the returned callback function from
+ * the respective `on*` callbacks.
+ *
+ * Detach a callback previously attached with `on*()`. Calling `off()` on a parent listener
+ * will not automatically remove listeners registered on child nodes, `off()`
+ * must also be called on any child listeners to remove the callback.
+ *
+ * If a callback is not specified, all callbacks for the specified eventType
+ * will be removed. Similarly, if no eventType is specified, all callbacks
+ * for the `Reference` will be removed.
+ *
+ * Individual listeners can also be removed by invoking their unsubscribe
+ * callbacks.
+ *
+ * @param query - The query that the listener was registered with.
+ * @param eventType - One of the following strings: "value", "child_added",
+ * "child_changed", "child_removed", or "child_moved." If omitted, all callbacks
+ * for the `Reference` will be removed.
+ * @param callback - The callback function that was passed to `on()` or
+ * `undefined` to remove all callbacks.
+ */
+export function off(query: Query, eventType?: EventType, callback?: (snapshot: DataSnapshot, previousChildName?: string | null) => unknown): void{
+    firebaseDatabaseCJS.off(query, eventType, callback);
+}
+
 
 /**
  * Returns a placeholder value for auto-populating the current timestamp (time

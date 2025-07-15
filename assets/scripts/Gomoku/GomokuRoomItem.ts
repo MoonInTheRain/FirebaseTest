@@ -2,6 +2,7 @@ import { _decorator, Button, Component, director, Label } from 'cc';
 import { GomokuDataWithId } from '../Define';
 import { MakeEventHandler, UIHandler } from '../Utils';
 import { GomokuService } from './GomokuService';
+import { getUserId } from '../FirebaseManager';
 const { ccclass, property } = _decorator;
 
 @ccclass('GomokuRoomItem')
@@ -10,6 +11,8 @@ export class GomokuRoomItem extends Component {
     private label: Label;
     @property(Button)
     private joinButton: Button;
+    @property(Label)
+    private buttonLabel: Label;
     
     private data: GomokuDataWithId;
 
@@ -20,12 +23,21 @@ export class GomokuRoomItem extends Component {
     public setData(data: GomokuDataWithId): void {
         this.label.string = data.name;
         this.data = data;
+
+        const userId = getUserId();
+        if (data.players.black == userId || data.players.white == userId) {
+            this.buttonLabel.string = "入室";
+        } else if (data.players.black == null || data.players.white == null) {
+            this.buttonLabel.string = "参加";
+        } else {
+            this.buttonLabel.string = "観戦";
+        }
     }
 
     @UIHandler
     private join(): void {
-        GomokuService.instance.setRoomId(this.data.roomId);
-        director.loadScene("chat");
+        GomokuService.instance.setRoomData(this.data);
+        director.loadScene("gomoku");
     }
 }
 
