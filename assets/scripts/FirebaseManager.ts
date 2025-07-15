@@ -1,17 +1,21 @@
+import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
+import { FirebaseApp } from "firebase/app";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
-import { Auth } from "@firebase/auth/dist/browser-cjs";
-import { FirebaseApp } from "firebase/app";
+import { getDatabase, ref, push, set, serverTimestampAtDB, get } from "./FirebaseWrapper/FirebaseDatabase";
+import { GomokuData, GomokuDataWithId } from "./Define";
+import { Database } from "firebase/database";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAXej2b2FrBVZqOKjUjjERGM2XioQuPEM0",
     authDomain: "litegame-df1fe.firebaseapp.com",
     projectId: "litegame-df1fe",
+    databaseURL: "https://litegame-df1fe-default-rtdb.firebaseio.com"
 };
 
-let app: FirebaseApp, auth: Auth, db: Firestore;
+let app: FirebaseApp, auth: Auth, db: Firestore, rdb: Database;
 let currentUID = null;
 
 export async function initFirebase(): Promise<void> {
@@ -26,15 +30,15 @@ export async function initFirebase(): Promise<void> {
                 console.log("ログイン済 UID:", currentUID);
                 resolve();
             } else {
-                    try {
-                        const result = await signInAnonymously(auth);
-                        currentUID = result.user.uid;
-                        console.log("匿名ログイン成功 UID:", currentUID);
-                        resolve();
-                    } catch (err) {
-                        console.error("匿名ログイン失敗:", err);
-                        reject(err);
-                    }
+                try {
+                    const result = await signInAnonymously(auth);
+                    currentUID = result.user.uid;
+                    console.log("匿名ログイン成功 UID:", currentUID);
+                    resolve();
+                } catch (err) {
+                    console.error("匿名ログイン失敗:", err);
+                    reject(err);
+                }
             }
         });
     });
@@ -103,3 +107,49 @@ export async function sendMessage(roomId: string, text: string) {
         createdAt: serverTimestamp()
     });
 };
+
+export async function getGomokuRooms(): Promise<GomokuDataWithId[]> {
+    const realtimeDB = getDatabase(app);
+    const roomsRef = ref(realtimeDB, "rooms");
+
+    const snapshot = await get(roomsRef);
+    if (!snapshot.exists()) {
+        return [];
+    }
+    const rooms = snapshot.val(); // object: { roomId: roomData, ... }
+
+    const roomList = Object.entries(rooms).map(([roomId, data]) => {
+        const room = data as GomokuData;
+        return {
+            roomId,
+            ...room
+        }
+    });
+
+    return roomList;
+}
+
+function initialBoard(): (null | 'black' | 'white')[][] {
+    const BOARD_SIZE = 15;
+    return Array.from({ length: BOARD_SIZE }, () =>
+        Array(BOARD_SIZE).fill(null)
+    );
+}
+
+export async function createRoomByBlack(roomName: string): Promise<GomokuDataWithId> {
+    const db = getDatabase(app);
+    // "rooms" の下に自動生成IDを持つノードを作成
+    const roomRef = push(ref(db, "rooms"));
+    const newData: GomokuDataWithId = {
+        roomId: roomRef.key,
+        name: roomName,
+        players: {
+            black: auth.currentUser?.uid || "anonymous",
+        },
+        board: initialBoard(),
+        turn: "black",
+        createdAt: serverTimestampAtDB()
+    };
+    await set(roomRef, newData);
+    return newData;
+}
