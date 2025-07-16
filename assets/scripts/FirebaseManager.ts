@@ -155,10 +155,8 @@ export async function createRoom(roomName: string, color: "black" | "white"): Pr
     return newData;
 }
 
-export async function join(roomData: GomokuDataWithId, color: "black" | "white"): Promise<void> {
+export async function updateGomoku(roomData: GomokuDataWithId): Promise<void> {
     const roomRef = ref(rdb, `rooms/${roomData.roomId}`);
-    roomData.players[color] = getUserId();
-    roomData.turn = "black"
     await update(roomRef, roomData);
 }
 

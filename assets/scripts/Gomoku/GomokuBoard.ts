@@ -3,6 +3,7 @@ import { DataSnapshot } from 'firebase/database';
 import { getUserId } from '../FirebaseManager';
 import { GomokuCell } from './GomokuCell';
 import { GomokuService } from './GomokuService';
+import { GomokuDataWithId } from '../Define';
 const { ccclass, property } = _decorator;
 
 @ccclass('GomokuBoard')
@@ -23,21 +24,25 @@ export class GomokuBoard extends Component {
     @property(Node)
     private opponentTurn: Node;
 
+    private roomData: GomokuDataWithId;
     private board: GomokuCell[][] = [];
 
-    private isBlack: boolean;
-    private isWhite: boolean;
+    private myColor: "white" | "black" | "none" = "none";
+    private myTurn: boolean = false;
 
     start() {
-        const data = GomokuService.instance.roomData;
+        this.roomData = GomokuService.instance.roomData;
         const userId = getUserId();
-        this.isBlack = data.players.black == userId;
-        this.isWhite = data.players.white == userId;
-        this.playerColorBlack.active = this.isBlack;
-        this.playerColorWhite.active = this.isWhite;
-        const playerFill = data.players.white != null && data.players.black != null;
+        this.myColor =
+            this.roomData.players.black == userId ? "black" :
+            this.roomData.players.white == userId ? "white" : 
+            "none";
+        this.playerColorBlack.active = this.myColor == "black";
+        this.playerColorWhite.active = this.myColor == "white";
+        const playerFill = this.roomData.players.white != null && this.roomData.players.black != null;
         this.waitOpponent.active = !playerFill;
-        this.updateTurnView(data.turn);
+        this.updateTurnView(this.roomData.turn);
+        this.updateBoard(this.roomData.board);
 
         GomokuService.instance.connectRoom(data => this.onChangeData(data));
 
@@ -48,7 +53,7 @@ export class GomokuBoard extends Component {
                 const newNode = instantiate(this.baseCell.node);
                 newNode.setParent(this.baseCell.node.parent);
                 const cell = newNode.getComponent(GomokuCell);
-                cell.init(x, y);
+                cell.init(() => this.onClickBoard(x, y));
                 newLine.push(cell);
             }
             this.board.push(newLine);
@@ -57,18 +62,31 @@ export class GomokuBoard extends Component {
     }
 
     private updateTurnView(val: string): void {
-        switch (val) {
-            case "white" : {
-                this.playerTurn.active = this.isWhite;
-                this.opponentTurn.active = !this.isWhite;
-                break;
-            }
-            case "black" : {
-                this.playerTurn.active = this.isBlack;
-                this.opponentTurn.active = !this.isBlack;
-                break;
+        if (this.myColor == "none") {
+            this.playerTurn.active = false;
+            this.opponentTurn.active = false;
+            return;
+        }
+        this.myTurn = this.myColor == val;
+        this.playerTurn.active = this.myTurn;
+        this.opponentTurn.active = !this.myTurn;
+    }
+
+    private updateBoard(value: ("none" | "black" | "white")[][]): void {
+        if (value == null) { return; }
+        for (let x = 0; x < 15; x++) {
+            for (let y = 0; y < 15; y++) {
+                this.board[y][x].setData(value[y][x]);
             }
         }
+    }
+
+    private onClickBoard(x: number, y: number): void {
+        const boardData = this.board.map(y => y.map(x => x.getData()));
+        boardData[x][y] = this.myColor;
+        this.roomData.board = boardData;
+        this.roomData.turn = this.myColor == "black" ? "white" : "black";
+        GomokuService.instance.updateGomoku(this.roomData);
     }
 
     protected onDestroy(): void {
@@ -84,11 +102,11 @@ export class GomokuBoard extends Component {
                 break;
             }
             case "turn": {
-                // ターン表示更新
+                this.updateTurnView(value);
                 break;
             }
             case "board": {
-                // ボードの表示更新
+                this.updateBoard(value);
                 break;
             }
         }

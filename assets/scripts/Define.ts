@@ -10,7 +10,7 @@ export type GomokuData = {
         white?: string;
         black?: string;
     },
-    board: (null | 'black' | 'white')[][],
+    board: ("none" | 'black' | 'white')[][],
     turn: "black" | "white",
     createdAt: object
 }

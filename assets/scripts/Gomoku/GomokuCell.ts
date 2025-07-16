@@ -9,22 +9,37 @@ export class GomokuCell extends Component {
     @property(Node)
     private whiteNode: Node;
 
-    private pos: {x: number, y: number};
+    private onClickAction: () => void;
 
     protected start(): void {
         const button = this.getComponent(Button);
         button.clickEvents.push(MakeEventHandler(this, this.onClick));
     }
 
-    public init(x: number, y: number): void {
-        this.pos = {x, y};
+    public init(onClickAction: () => void): void {
         this.blackNode.active = false;
         this.whiteNode.active = false;
+        this.onClickAction = onClickAction;
+    }
+
+    public setData(data: ("none" | "white" | "black")): void {
+        this.blackNode.active = data == "black";
+        this.whiteNode.active = data == "white";
+    }
+
+    public getData(): ("none" | "white" | "black") {
+        if (this.blackNode.active) {
+            return "black";
+        }
+        if (this.whiteNode.active) {
+            return "white"
+        }
+        return "none";
     }
 
     @UIHandler
     public onClick(): void {
-        console.log(this.pos);
+        this.onClickAction();
     }
 }
 
