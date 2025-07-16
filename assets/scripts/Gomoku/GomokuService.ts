@@ -1,6 +1,6 @@
 import { DataSnapshot } from "firebase/database";
-import { connectGomokuRoom, sendMessage } from "../FirebaseManager";
 import { GomokuDataWithId } from "../Define";
+import { connectGomokuRoom, join } from "../FirebaseManager";
 
 export class GomokuService {
     private constructor() {}
@@ -24,6 +24,10 @@ export class GomokuService {
 
     public connectRoom(onNewMessage: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): void {
         this.charUnsubscribe = connectGomokuRoom(this._room.roomId, onNewMessage);
+    }
+
+    public async joinRoom(room: GomokuDataWithId): Promise<void> {
+        return join(room, room.turn);
     }
 
     public disconnectRoom(): void {

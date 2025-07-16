@@ -1,8 +1,8 @@
-import { _decorator, Button, Component, EditBox, instantiate, Node } from 'cc';
-import { GomokuRoomItem } from './GomokuRoomItem';
-import { GomokuDataWithId, RoomData } from '../Define';
-import { initFirebase, loadRoomList, addRoom, getGomokuRooms, createRoomByBlack } from '../FirebaseManager';
+import { _decorator, Button, Component, EditBox, instantiate } from 'cc';
+import { GomokuDataWithId } from '../Define';
+import { createRoom, getGomokuRooms, initFirebase } from '../FirebaseManager';
 import { MakeEventHandler, UIHandler } from '../Utils';
+import { GomokuRoomItem } from './GomokuRoomItem';
 const { ccclass, property } = _decorator;
 
 @ccclass('GomokuRoomList')
@@ -43,7 +43,7 @@ export class GomokuRoomList extends Component {
         }
 
         const name = this.input.string;
-        const room = await createRoomByBlack(name);
+        const room = await createRoom(name, "black");
 
         this.itemBase.node.active = true;
         const newNode = instantiate(this.itemBase.node);

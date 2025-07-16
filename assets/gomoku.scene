@@ -2051,6 +2051,9 @@
     "baseCell": {
       "__id__": 49
     },
+    "waitOpponent": {
+      "__id__": 52
+    },
     "playerColorBlack": {
       "__id__": 15
     },

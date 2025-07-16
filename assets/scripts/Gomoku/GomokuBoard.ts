@@ -11,6 +11,9 @@ export class GomokuBoard extends Component {
     private baseCell: GomokuCell;
 
     @property(Node)
+    private waitOpponent: Node;
+
+    @property(Node)
     private playerColorBlack: Node;
     @property(Node)
     private playerColorWhite: Node;
@@ -32,6 +35,8 @@ export class GomokuBoard extends Component {
         this.isWhite = data.players.white == userId;
         this.playerColorBlack.active = this.isBlack;
         this.playerColorWhite.active = this.isWhite;
+        const playerFill = data.players.white != null && data.players.black != null;
+        this.waitOpponent.active = !playerFill;
         this.updateTurnView(data.turn);
 
         GomokuService.instance.connectRoom(data => this.onChangeData(data));
@@ -74,7 +79,8 @@ export class GomokuBoard extends Component {
         const value = data.val();
         switch (data.key) {
             case "players": {
-                // 対戦開始
+                const playerFill = value.white != null && value.black != null;
+                this.waitOpponent.active = !playerFill;
                 break;
             }
             case "turn": {

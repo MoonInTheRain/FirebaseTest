@@ -16,6 +16,8 @@ export class GomokuRoomItem extends Component {
     
     private data: GomokuDataWithId;
 
+    private status: "enter" | "join" | "see" = "enter";
+
     start() {
         this.joinButton.clickEvents.push(MakeEventHandler(this, this.join));
     }
@@ -27,15 +29,21 @@ export class GomokuRoomItem extends Component {
         const userId = getUserId();
         if (data.players.black == userId || data.players.white == userId) {
             this.buttonLabel.string = "入室";
+            this.status = "enter";
         } else if (data.players.black == null || data.players.white == null) {
             this.buttonLabel.string = "参加";
+            this.status = "join";
         } else {
             this.buttonLabel.string = "観戦";
+            this.status = "see";
         }
     }
 
     @UIHandler
-    private join(): void {
+    private async join(): Promise<void> {
+        if (this.status == "join") {
+            await GomokuService.instance.joinRoom(this.data);
+        }
         GomokuService.instance.setRoomData(this.data);
         director.loadScene("gomoku");
     }

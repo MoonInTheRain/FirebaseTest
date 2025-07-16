@@ -5,7 +5,7 @@ import { Database, DataSnapshot } from "firebase/database";
 import { GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off } from "./FirebaseWrapper/FirebaseDatabase";
+import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off, update } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 
 const firebaseConfig = {
@@ -133,28 +133,33 @@ export async function getGomokuRooms(): Promise<GomokuDataWithId[]> {
     return roomList;
 }
 
-function initialBoard(): (null | 'black' | 'white')[][] {
+export function initialBoard(): (null | 'black' | 'white')[][] {
     const BOARD_SIZE = 15;
     return Array.from({ length: BOARD_SIZE }, () =>
         Array(BOARD_SIZE).fill(null)
     );
 }
 
-export async function createRoomByBlack(roomName: string): Promise<GomokuDataWithId> {
+export async function createRoom(roomName: string, color: "black" | "white"): Promise<GomokuDataWithId> {
     // "rooms" の下に自動生成IDを持つノードを作成
     const roomRef = push(ref(rdb, "rooms"));
     const newData: GomokuDataWithId = {
         roomId: roomRef.key,
         name: roomName,
-        players: {
-            black: auth.currentUser?.uid || "anonymous",
-        },
+        players: {},
         board: initialBoard(),
-        turn: "black",
+        turn: color == "black" ? "white" : "black",
         createdAt: serverTimestampAtDB()
     };
     await set(roomRef, newData);
     return newData;
+}
+
+export async function join(roomData: GomokuDataWithId, color: "black" | "white"): Promise<void> {
+    const roomRef = ref(rdb, `rooms/${roomData.roomId}`);
+    roomData.players[color] = getUserId();
+    roomData.turn = "black"
+    await update(roomRef, roomData);
 }
 
 export function connectGomokuRoom(roomId: string, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): () => void {
