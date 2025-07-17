@@ -2,7 +2,7 @@ import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
 import { Database, DataSnapshot } from "firebase/database";
-import { GomokuData, GomokuDataWithId } from "./Define";
+import { GomokuColor, GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
 import { get, getDatabase, off, onChildChanged, onDisconnect, push, ref, remove, serverTimestampAtDB, set, update } from "./FirebaseWrapper/FirebaseDatabase";
@@ -133,10 +133,10 @@ export async function getGomokuRooms(): Promise<GomokuDataWithId[]> {
     return roomList;
 }
 
-export function initialBoard(): (null | 'black' | 'white')[][] {
+export function initialBoard(): GomokuColor[][] {
     const BOARD_SIZE = 15;
     return Array.from({ length: BOARD_SIZE }, () =>
-        Array(BOARD_SIZE).fill(null)
+        Array(BOARD_SIZE).fill("none")
     );
 }
 
@@ -149,10 +149,11 @@ export async function createRoom(roomName: string, color: "black" | "white"): Pr
         players: {},
         board: initialBoard(),
         turn: color == "black" ? "white" : "black",
+        winner: "none",
         createdAt: serverTimestampAtDB(),
         connect: {}
     };
-    newData[color] = {id: getUserId(), online: false};
+    newData.players[color] = getUserId();
     await set(roomRef, newData);
     return newData;
 }

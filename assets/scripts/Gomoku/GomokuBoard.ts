@@ -13,6 +13,10 @@ export class GomokuBoard extends Component {
 
     @property(Node)
     private waitOpponent: Node;
+    @property(Node)
+    private blackWin: Node;
+    @property(Node)
+    private whiteWin: Node;
 
     @property(Node)
     private playerColorBlack: Node;
@@ -34,8 +38,11 @@ export class GomokuBoard extends Component {
 
     private myColor: GomokuColor = "none";
     private myTurn: boolean = false;
+    private isFinish: boolean = false;
 
     async start() {
+        this.blackWin.active = false;
+        this.whiteWin.active = false;
         this.initBoardCell();
 
         GomokuService.instance.startSubscribe(data => this.onChangeData(data));
@@ -49,6 +56,7 @@ export class GomokuBoard extends Component {
         this.updateBoard(this.roomData.board);
         this.updatePlayers(this.roomData.players);
         this.updateConnect(this.roomData.connect);
+        this.updateWinner(this.roomData.winner);
     }
 
     private initBoardCell(): void {
@@ -94,6 +102,16 @@ export class GomokuBoard extends Component {
         this.waitOpponent.active = data.black == null || data.white == null;
     }
 
+    private updateWinner(data: GomokuColor | undefined): void {
+        if (data == "white") {
+            this.whiteWin.active = true;
+            this.isFinish = true;
+        } else if (data == "black") {
+            this.blackWin.active = true;
+            this.isFinish = true;
+        }
+    }
+
     private async updateConnect(data: GomokuConnect): Promise<void> {
         if (data == undefined) {
             this.connectBlack.string = "黒：オフライン";
@@ -115,11 +133,12 @@ export class GomokuBoard extends Component {
     }
 
     private onClickBoard(x: number, y: number): void {
-        if (!this.myTurn) { return; }
+        if (!this.myTurn || this.isFinish) { return; }
         const boardData = this.board.map(y => y.map(x => x.getData()));
         boardData[x][y] = this.myColor;
         this.roomData.board = boardData;
         this.roomData.turn = GomokuService.getOpponentColor(this.myColor);
+        this.roomData.winner = this.checkWinner(boardData);
         GomokuService.instance.updateGomoku(this.roomData);
     }
 
@@ -146,7 +165,48 @@ export class GomokuBoard extends Component {
                 this.updateConnect(value);
                 break;
             }
+            case "winner": {
+                this.updateWinner(value);
+                break;
+            }
         }
+    }
+
+    private checkWinner(board: GomokuColor[][]): GomokuColor {
+        const directions = [
+            { dx: 1, dy: 0 },  // 横
+            { dx: 0, dy: 1 },  // 縦
+            { dx: 1, dy: 1 },  // 斜め（右下）
+            { dx: 1, dy: -1 }, // 斜め（右上）
+        ];
+
+        for (let y = 0; y < 15; y++) {
+            for (let x = 0; x < 15; x++) {
+                const current = board[y][x];
+                if (current == "none") { continue; }
+
+                for (const { dx, dy } of directions) {
+                    let count = 1;
+                    for (let i = 1; i < 5; i++) {
+                        const nx = x + dx * i;
+                        const ny = y + dy * i;
+
+                        if (
+                            nx < 0 || nx >= 15 ||
+                            ny < 0 || ny >= 15 ||
+                            board[ny][nx] !== current
+                        ) {
+                            break;
+                        }
+                        count++;
+                    }
+
+                    if (count === 5) { return current; }
+                }
+            }
+        }
+
+        return "none";
     }
 }
 

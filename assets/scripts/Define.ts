@@ -9,6 +9,7 @@ export type GomokuData = {
     players: GomokuPlayers,
     board: GomokuColor[][],
     turn: GomokuColor,
+    winner: GomokuColor,
     createdAt: object,
     connect: GomokuConnect;
 }
