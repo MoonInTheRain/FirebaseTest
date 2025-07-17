@@ -1,5 +1,5 @@
 import { FirebaseApp } from 'firebase/app';
-import { Database, DatabaseReference, DataSnapshot, EventType, Query, ThenableReference, Unsubscribe } from "firebase/database";
+import { Database, DatabaseReference, DataSnapshot, EventType, OnDisconnect, Query, ThenableReference, Unsubscribe } from "firebase/database";
 import firebaseDatabaseCJS from '../../../node_modules/@firebase/database/dist/index.cjs.js';
 import { EDITOR } from 'cc/env';
 
@@ -216,4 +216,32 @@ export function update(ref: DatabaseReference, values: object): Promise<void> {
  */
 export function serverTimestampAtDB(): object {
     return firebaseDatabaseCJS.serverTimestamp();
+}
+
+/**
+ * Returns an `OnDisconnect` object - see
+ * {@link https://firebase.google.com/docs/database/web/offline-capabilities | Enabling Offline Capabilities in JavaScript}
+ * for more information on how to use it.
+ *
+ * @param ref - The reference to add OnDisconnect triggers for.
+ */
+export function onDisconnect(ref: DatabaseReference): OnDisconnect {
+    return firebaseDatabaseCJS.onDisconnect(ref);
+}
+/**
+ * Removes the data at this Database location.
+ *
+ * Any data at child locations will also be deleted.
+ *
+ * The effect of the remove will be visible immediately and the corresponding
+ * event 'value' will be triggered. Synchronization of the remove to the
+ * Firebase servers will also be started, and the returned Promise will resolve
+ * when complete. If provided, the onComplete callback will be called
+ * asynchronously after synchronization has finished.
+ *
+ * @param ref - The location to remove.
+ * @returns Resolves when remove on server is complete.
+ */
+export function remove(ref: DatabaseReference): Promise<void> {
+    return firebaseDatabaseCJS.remove(ref);
 }

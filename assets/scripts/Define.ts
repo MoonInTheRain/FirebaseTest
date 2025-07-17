@@ -6,13 +6,22 @@ export type ChatData = { message: string, isMine: boolean};
 
 export type GomokuData = {
     name: string,
-    players: {
-        white?: string;
-        black?: string;
-    },
-    board: ("none" | 'black' | 'white')[][],
-    turn: "black" | "white",
-    createdAt: object
+    players: GomokuPlayers,
+    board: GomokuColor[][],
+    turn: GomokuColor,
+    createdAt: object,
+    connect: GomokuConnect;
 }
+
+export type GomokuPlayers = {
+    white?: string;
+    black?: string;
+}
+
+export type GomokuConnect = {
+    [userId: string]: boolean;
+}
+
+export type GomokuColor = "white" | "black" | "none";
 
 export type GomokuDataWithId = GomokuData & { roomId: string }

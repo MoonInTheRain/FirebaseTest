@@ -2,10 +2,10 @@ import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
 import { Database, DataSnapshot } from "firebase/database";
-import { GomokuData, GomokuDataWithId } from "./Define";
+import { GomokuColor, GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off, update } from "./FirebaseWrapper/FirebaseDatabase";
+import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off, update, onDisconnect, remove } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 
 const firebaseConfig = {
@@ -149,8 +149,10 @@ export async function createRoom(roomName: string, color: "black" | "white"): Pr
         players: {},
         board: initialBoard(),
         turn: color == "black" ? "white" : "black",
-        createdAt: serverTimestampAtDB()
+        createdAt: serverTimestampAtDB(),
+        connect: {}
     };
+    newData[color] = {id: getUserId(), online: false};
     await set(roomRef, newData);
     return newData;
 }
@@ -160,8 +162,24 @@ export async function updateGomoku(roomData: GomokuDataWithId): Promise<void> {
     await update(roomRef, roomData);
 }
 
-export function connectGomokuRoom(roomId: string, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): () => void {
-    const roomRef = ref(rdb, `rooms/${roomId}`);
+export async function connectGomokuRoom(roomData: GomokuDataWithId, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): Promise<() => void> {
+    const roomRef = ref(rdb, `rooms/${roomData.roomId}`);
     onChildChanged(roomRef, callback);
-    return () => off(roomRef, "child_changed", callback);
+
+    const userId = getUserId();
+    const connectRef = ref(rdb, `rooms/${roomData.roomId}/connect/${userId}`);
+    onDisconnect(connectRef).remove();
+    await set(connectRef, true);
+    return async () => {
+        off(roomRef, "child_changed", callback);
+        // 能動的に部屋を退出
+        await remove(connectRef);
+        // onDisconnect の登録を解除
+        await onDisconnect(connectRef).cancel();
+    }
+}
+
+export async function getRoom(roomId:string): Promise<GomokuDataWithId> {
+    const roomRef = ref(rdb, `rooms/${roomId}`);
+    return (await get(roomRef)).val();
 }

@@ -1,9 +1,8 @@
-import { _decorator, Component, instantiate, Node } from 'cc';
+import { _decorator, Component, instantiate, Label, Node } from 'cc';
 import { DataSnapshot } from 'firebase/database';
-import { getUserId } from '../FirebaseManager';
+import { GomokuColor, GomokuConnect, GomokuDataWithId, GomokuPlayers } from '../Define';
 import { GomokuCell } from './GomokuCell';
 import { GomokuService } from './GomokuService';
-import { GomokuDataWithId } from '../Define';
 const { ccclass, property } = _decorator;
 
 @ccclass('GomokuBoard')
@@ -24,29 +23,31 @@ export class GomokuBoard extends Component {
     @property(Node)
     private opponentTurn: Node;
 
+    @property(Label)
+    private connectBlack: Label;
+    @property(Label)
+    private connectWhite: Label;
+
     private roomData: GomokuDataWithId;
     private board: GomokuCell[][] = [];
 
-    private myColor: "white" | "black" | "none" = "none";
+    private myColor: GomokuColor = "none";
     private myTurn: boolean = false;
 
-    start() {
+    async start() {
         this.initBoardCell();
 
-        this.roomData = GomokuService.instance.roomData;
-        const userId = getUserId();
-        this.myColor =
-            this.roomData.players.black == userId ? "black" :
-            this.roomData.players.white == userId ? "white" : 
-            "none";
+        this.roomData = await GomokuService.instance.connectRoom(data => this.onChangeData(data));
+
+        this.myColor = GomokuService.instance.myColor;
         this.playerColorBlack.active = this.myColor == "black";
         this.playerColorWhite.active = this.myColor == "white";
-        const playerFill = this.roomData.players.white != null && this.roomData.players.black != null;
-        this.waitOpponent.active = !playerFill;
+
+
         this.updateTurnView(this.roomData.turn);
         this.updateBoard(this.roomData.board);
-
-        GomokuService.instance.connectRoom(data => this.onChangeData(data));
+        this.updatePlayers(this.roomData.players);
+        this.updateConnect(this.roomData.connect);
     }
 
     private initBoardCell(): void {
@@ -65,7 +66,8 @@ export class GomokuBoard extends Component {
         this.baseCell.node.active = false;
     }
 
-    private updateTurnView(val: string): void {
+    private updateTurnView(val: GomokuColor): void {
+        this.roomData.turn = val;
         if (this.myColor == "none") {
             this.playerTurn.active = false;
             this.opponentTurn.active = false;
@@ -76,8 +78,9 @@ export class GomokuBoard extends Component {
         this.opponentTurn.active = !this.myTurn;
     }
 
-    private updateBoard(value: ("none" | "black" | "white")[][]): void {
+    private updateBoard(value: GomokuColor[][]): void {
         if (value == null) { return; }
+        this.roomData.board = value;
         for (let x = 0; x < 15; x++) {
             for (let y = 0; y < 15; y++) {
                 this.board[y][x].setData(value[y][x]);
@@ -85,12 +88,32 @@ export class GomokuBoard extends Component {
         }
     }
 
+    private updatePlayers(data: GomokuPlayers): void {
+        this.roomData.players = data;
+        this.waitOpponent.active = data.black == null || data.white == null;
+    }
+
+    private updateConnect(data: GomokuConnect): void {
+        if (data == undefined) {
+            this.connectBlack.string = "黒：オフライン";
+            this.connectWhite.string = "白：オフライン";
+            return;
+        }
+        this.roomData.connect = data;
+        const blackUser = this.roomData.players.black;
+        const whiteUser = this.roomData.players.white;
+        const isBlack = (blackUser != undefined) && (data[blackUser] == true);
+        const isWhite = (whiteUser != undefined) && (data[whiteUser] == true);
+        this.connectBlack.string = isBlack ? "黒：オンライン" : "黒：オフライン";
+        this.connectWhite.string = isWhite ? "白：オンライン" : "白：オフライン";
+    }
+
     private onClickBoard(x: number, y: number): void {
         if (!this.myTurn) { return; }
         const boardData = this.board.map(y => y.map(x => x.getData()));
         boardData[x][y] = this.myColor;
         this.roomData.board = boardData;
-        this.roomData.turn = this.myColor == "black" ? "white" : "black";
+        this.roomData.turn = GomokuService.getOpponentColor(this.myColor);
         GomokuService.instance.updateGomoku(this.roomData);
     }
 
@@ -102,8 +125,7 @@ export class GomokuBoard extends Component {
         const value = data.val();
         switch (data.key) {
             case "players": {
-                const playerFill = value.white != null && value.black != null;
-                this.waitOpponent.active = !playerFill;
+                this.updatePlayers(value);
                 break;
             }
             case "turn": {
@@ -112,6 +134,10 @@ export class GomokuBoard extends Component {
             }
             case "board": {
                 this.updateBoard(value);
+                break;
+            }
+            case "connect": {
+                this.updateConnect(value);
                 break;
             }
         }
