@@ -31,6 +31,8 @@ export class GomokuBoard extends Component {
     private myTurn: boolean = false;
 
     start() {
+        this.initBoardCell();
+
         this.roomData = GomokuService.instance.roomData;
         const userId = getUserId();
         this.myColor =
@@ -45,7 +47,9 @@ export class GomokuBoard extends Component {
         this.updateBoard(this.roomData.board);
 
         GomokuService.instance.connectRoom(data => this.onChangeData(data));
+    }
 
+    private initBoardCell(): void {
         this.baseCell.node.active = true;
         for (let x = 0; x < 15; x++) {
             const newLine: GomokuCell[] = [];
@@ -82,6 +86,7 @@ export class GomokuBoard extends Component {
     }
 
     private onClickBoard(x: number, y: number): void {
+        if (!this.myTurn) { return; }
         const boardData = this.board.map(y => y.map(x => x.getData()));
         boardData[x][y] = this.myColor;
         this.roomData.board = boardData;
