@@ -2,10 +2,10 @@ import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
 import { Database, DataSnapshot } from "firebase/database";
-import { GomokuColor, GomokuData, GomokuDataWithId } from "./Define";
+import { GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
-import { get, getDatabase, push, ref, serverTimestampAtDB, set, onChildChanged, off, update, onDisconnect, remove } from "./FirebaseWrapper/FirebaseDatabase";
+import { get, getDatabase, off, onChildChanged, onDisconnect, push, ref, remove, serverTimestampAtDB, set, update } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 
 const firebaseConfig = {
@@ -162,16 +162,20 @@ export async function updateGomoku(roomData: GomokuDataWithId): Promise<void> {
     await update(roomRef, roomData);
 }
 
-export async function connectGomokuRoom(roomData: GomokuDataWithId, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): Promise<() => void> {
-    const roomRef = ref(rdb, `rooms/${roomData.roomId}`);
+export function connectGomokuRoom(roomId: string, callback: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): () => void {
+    const roomRef = ref(rdb, `rooms/${roomId}`);
     onChildChanged(roomRef, callback);
+    return () => {
+        off(roomRef, "child_changed", callback);
+    }
+}
 
+export async function setGomokuRoomOnline(roomId: string): Promise<() => void> {
     const userId = getUserId();
-    const connectRef = ref(rdb, `rooms/${roomData.roomId}/connect/${userId}`);
+    const connectRef = ref(rdb, `rooms/${roomId}/connect/${userId}`);
     onDisconnect(connectRef).remove();
     await set(connectRef, true);
     return async () => {
-        off(roomRef, "child_changed", callback);
         // 能動的に部屋を退出
         await remove(connectRef);
         // onDisconnect の登録を解除

@@ -1,6 +1,7 @@
 import { _decorator, Component, instantiate, Label, Node } from 'cc';
 import { DataSnapshot } from 'firebase/database';
 import { GomokuColor, GomokuConnect, GomokuDataWithId, GomokuPlayers } from '../Define';
+import { getUserId } from '../FirebaseManager';
 import { GomokuCell } from './GomokuCell';
 import { GomokuService } from './GomokuService';
 const { ccclass, property } = _decorator;
@@ -37,12 +38,12 @@ export class GomokuBoard extends Component {
     async start() {
         this.initBoardCell();
 
-        this.roomData = await GomokuService.instance.connectRoom(data => this.onChangeData(data));
+        GomokuService.instance.startSubscribe(data => this.onChangeData(data));
+        this.roomData = await GomokuService.instance.connectRoom();
 
         this.myColor = GomokuService.instance.myColor;
         this.playerColorBlack.active = this.myColor == "black";
         this.playerColorWhite.active = this.myColor == "white";
-
 
         this.updateTurnView(this.roomData.turn);
         this.updateBoard(this.roomData.board);
@@ -93,7 +94,7 @@ export class GomokuBoard extends Component {
         this.waitOpponent.active = data.black == null || data.white == null;
     }
 
-    private updateConnect(data: GomokuConnect): void {
+    private async updateConnect(data: GomokuConnect): Promise<void> {
         if (data == undefined) {
             this.connectBlack.string = "黒：オフライン";
             this.connectWhite.string = "白：オフライン";
@@ -106,6 +107,11 @@ export class GomokuBoard extends Component {
         const isWhite = (whiteUser != undefined) && (data[whiteUser] == true);
         this.connectBlack.string = isBlack ? "黒：オンライン" : "黒：オフライン";
         this.connectWhite.string = isWhite ? "白：オンライン" : "白：オフライン";
+
+        // スマホのスタンバイなどで、自分がオフラインになってしまった時につなぎ直す。
+        if (this.myColor != "none" && data[getUserId()] == undefined) {
+            this.roomData = await GomokuService.instance.connectRoom();
+        }
     }
 
     private onClickBoard(x: number, y: number): void {

@@ -1,6 +1,6 @@
 import { DataSnapshot } from "firebase/database";
 import { GomokuColor, GomokuDataWithId } from "../Define";
-import { connectGomokuRoom, getRoom, getUserId, updateGomoku } from "../FirebaseManager";
+import { connectGomokuRoom, getRoom, getUserId, setGomokuRoomOnline, updateGomoku } from "../FirebaseManager";
 
 export class GomokuService {
     private constructor() {}
@@ -13,7 +13,8 @@ export class GomokuService {
 
     private _room: GomokuDataWithId;
     private _myColor: GomokuColor;
-    private charUnsubscribe: () => void;
+    private unsubscribe: () => void;
+    private disconnect: () => void;
 
     public get roomData(): GomokuDataWithId {
         return this._room;
@@ -32,8 +33,13 @@ export class GomokuService {
             "none";
     }
 
-    public async connectRoom(onNewMessage: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): Promise<GomokuDataWithId> {
-        this.charUnsubscribe = await connectGomokuRoom(this._room, onNewMessage);
+    public startSubscribe(onNewMessage: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): void {
+        this.unsubscribe = connectGomokuRoom(this._room.roomId, onNewMessage);
+    }
+
+    public async connectRoom(): Promise<GomokuDataWithId> {
+        this.disconnect = await setGomokuRoomOnline(this._room.roomId);
+        // 接続した情報を取り直すためにルームを再取得する。
         const room = await getRoom(this._room.roomId);
         this.setRoomData(room);
         return this._room;
@@ -61,8 +67,10 @@ export class GomokuService {
     }
 
     public disconnectRoom(): void {
-        this.charUnsubscribe?.();
-        this.charUnsubscribe = undefined;
+        this.unsubscribe?.();
+        this.unsubscribe = undefined;
+        this.disconnect?.();
+        this.disconnect = undefined;
         this._room = undefined;
     }
 }
