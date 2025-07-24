@@ -22,9 +22,3 @@ node_modules/
 # WebStorm
 #//////////////////////////
 .idea/
-
-#//////////////////////////
-# Firebase
-#//////////////////////////
-FirebaseTools/public/
-FirebaseTools/node_modules/
