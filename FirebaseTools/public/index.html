@@ -56,5 +56,11 @@
     System.import('./index.js').catch(function(err) { console.error(err); })
 </script>
 
+<script>
+    navigator.serviceWorker.register('/firebase-messaging-sw.js').then(registration => {
+        console.log('Service Worker 登録完了:', registration);
+    });
+</script>
+
 </body>
 </html>

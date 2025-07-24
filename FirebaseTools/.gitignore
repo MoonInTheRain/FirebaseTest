@@ -71,3 +71,4 @@ node_modules/
 # build
 public/*
 !index.html
+!firebase-messaging-sw.js
