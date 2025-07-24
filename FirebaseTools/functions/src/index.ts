@@ -57,3 +57,84 @@ export const registerPushToken = functions.https.onCall(
   }
 );
 
+interface SendNotificationByTopicRequest {
+  topic: string;
+  title: string;
+  body: string;
+}
+
+export const sendNotificationByTopic = functions.https.onCall(
+  async (request: functions.https.CallableRequest<SendNotificationByTopicRequest>) => {
+    const {topic, title, body} = request.data;
+
+    if (!title || !body || !topic) {
+      throw new functions.https.HttpsError("invalid-argument", "必要なパラメータが不足しています");
+    }
+
+    const message: admin.messaging.Message = {
+      data: {title, body},
+      topic,
+    };
+
+    try {
+      const res = await admin.messaging().send(message);
+      console.log("通知送信成功:", res);
+      return {success: true, messageId: res};
+    } catch (err) {
+      console.error("通知送信失敗:", err);
+      throw new functions.https.HttpsError("internal", "通知送信に失敗しました");
+    }
+  }
+);
+
+interface SendNotificationByUserIdRequest {
+  userId: string;
+  title: string;
+  body: string;
+}
+
+export const sendNotificationByUserId = functions.https.onCall(
+  async (request: functions.https.CallableRequest<SendNotificationByUserIdRequest>) => {
+    const {userId, title, body} = request.data;
+
+    if (!title || !body || !userId) {
+      throw new functions.https.HttpsError("invalid-argument", "必要なパラメータが不足しています");
+    }
+
+    const token = await getToken(userId);
+    const message: admin.messaging.Message = {
+      data: {title, body},
+      token,
+    };
+
+    try {
+      const res = await admin.messaging().send(message);
+      console.log("通知送信成功:", res);
+      return {success: true, messageId: res};
+    } catch (err) {
+      console.error("通知送信失敗:", err);
+      throw new functions.https.HttpsError("internal", "通知送信に失敗しました");
+    }
+  }
+);
+
+const getToken = async (userId: string): Promise<string> => {
+  try {
+    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "ユーザーが存在しません");
+    }
+
+    const token = userDoc.data()?.token;
+
+    if (!token) {
+      throw new functions.https.HttpsError("not-found", "トークンが登録されていません");
+    }
+
+    return token;
+  } catch (error) {
+    console.error("トークン取得エラー:", error);
+    throw new functions.https.HttpsError("internal", "トークン取得に失敗しました");
+  }
+};
