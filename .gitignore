@@ -26,4 +26,5 @@ node_modules/
 #//////////////////////////
 # Firebase
 #//////////////////////////
-FirebaseTools/
+FirebaseTools/public/
+FirebaseTools/node_modules/
