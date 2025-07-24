@@ -7,22 +7,30 @@ import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
 import { get, getDatabase, off, onChildChanged, onDisconnect, push, ref, remove, serverTimestampAtDB, set, update } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
+import { getMessaging, getToken } from "./FirebaseWrapper/FirebaseMessage";
+import { Functions, getFunctions, httpsCallable } from "./FirebaseWrapper/FirebaseFunctions";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAXej2b2FrBVZqOKjUjjERGM2XioQuPEM0",
     authDomain: "litegame-df1fe.firebaseapp.com",
     projectId: "litegame-df1fe",
-    databaseURL: "https://litegame-df1fe-default-rtdb.firebaseio.com"
+    /** RealtimeDatabaseで必要 */
+    databaseURL: "https://litegame-df1fe-default-rtdb.firebaseio.com",
+    /** FirebaseMessageで必要 */
+    appId: "1:213956204660:web:f09be0cacbd2566f6f1921",
+    messagingSenderId: "213956204660",
 };
 
-let app: FirebaseApp, auth: Auth, db: Firestore, rdb: Database;
+let app: FirebaseApp, auth: Auth, db: Firestore, rdb: Database, functions: Functions;
 let currentUID = null;
 
 export async function initFirebase(): Promise<void> {
+    if (app) { return; }
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
     rdb = getDatabase(app);
+    functions = getFunctions(app);
 
     return new Promise<void>((resolve, reject) => {
         onAuthStateChanged(auth, async (user) => {
@@ -187,4 +195,17 @@ export async function setGomokuRoomOnline(roomId: string): Promise<() => void> {
 export async function getRoom(roomId:string): Promise<GomokuDataWithId> {
     const roomRef = ref(rdb, `rooms/${roomId}`);
     return (await get(roomRef)).val();
+}
+
+interface RegisterPushTokenResponse {
+    success : boolean;
+}
+
+export async function registerPushToken(): Promise<boolean> {
+    await initFirebase();
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: "BPt2bsc3KsQ1e_U7brHAHJt6OVwi7djZU9CZmjQTao082Ljf1DT4cXV5ty6cBULshXadExwN9nN9FD-qXrkYIwE" });
+    const registerPushToken = httpsCallable<unknown, RegisterPushTokenResponse>(functions, "registerPushToken");
+    const response = await registerPushToken({ token });
+    return response.data.success;
 }
