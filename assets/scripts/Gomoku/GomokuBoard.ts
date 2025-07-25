@@ -1,9 +1,10 @@
-import { _decorator, Component, instantiate, Label, Node } from 'cc';
+import { _decorator, Button, Component, instantiate, Label, Node } from 'cc';
 import { DataSnapshot } from 'firebase/database';
 import { GomokuColor, GomokuConnect, GomokuDataWithId, GomokuPlayers } from '../Define';
-import { getUserId } from '../FirebaseManager';
+import { getUserId, pushUserNotification } from '../FirebaseManager';
 import { GomokuCell } from './GomokuCell';
 import { GomokuService } from './GomokuService';
+import { MakeEventHandler, UIHandler } from '../Utils';
 const { ccclass, property } = _decorator;
 
 @ccclass('GomokuBoard')
@@ -33,6 +34,11 @@ export class GomokuBoard extends Component {
     @property(Label)
     private connectWhite: Label;
 
+    @property(Button)
+    private callBlackButton: Button;
+    @property(Button)
+    private callWhiteButton: Button;
+
     private roomData: GomokuDataWithId;
     private board: GomokuCell[][] = [];
 
@@ -57,6 +63,9 @@ export class GomokuBoard extends Component {
         this.updatePlayers(this.roomData.players);
         this.updateConnect(this.roomData.connect);
         this.updateWinner(this.roomData.winner);
+
+        this.callBlackButton.clickEvents.push(MakeEventHandler(this, this.onClickCallBlack));
+        this.callWhiteButton.clickEvents.push(MakeEventHandler(this, this.onClickCallWhite));
     }
 
     private initBoardCell(): void {
@@ -129,6 +138,15 @@ export class GomokuBoard extends Component {
         // スマホのスタンバイなどで、自分がオフラインになってしまった時につなぎ直す。
         if (this.myColor != "none" && data[getUserId()] == undefined) {
             this.roomData = await GomokuService.instance.connectRoom();
+        }
+
+        this.callBlackButton.node.active = false;
+        this.callWhiteButton.node.active = false;
+        if (this.myColor == "white" && blackUser != undefined && !isBlack) {
+            this.callBlackButton.node.active = true;
+        }
+        if (this.myColor == "black" && whiteUser != undefined && !isWhite) {
+            this.callWhiteButton.node.active = true;
         }
     }
 
@@ -207,6 +225,21 @@ export class GomokuBoard extends Component {
         }
 
         return "none";
+    }
+
+    @UIHandler
+    private onClickCallBlack(): void {
+        this.callPlayer(this.roomData.players.black);
+    }
+
+    @UIHandler
+    private onClickCallWhite(): void {
+        this.callPlayer(this.roomData.players.white);
+    }
+
+    private callPlayer(userId: string | undefined) {
+        if (userId == undefined) { return; }
+        pushUserNotification(userId);
     }
 }
 

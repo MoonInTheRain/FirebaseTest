@@ -209,3 +209,22 @@ export async function registerPushToken(): Promise<boolean> {
     const response = await registerPushToken({ token });
     return response.data.success;
 }
+
+export async function pushTopicNotificationTest(): Promise<void> {
+    await initFirebase();
+    const topic = "litegame_notice";
+    const title = "test";
+    const body = "てすとです。" + Date.now();
+    const func = httpsCallable<unknown, RegisterPushTokenResponse>(functions, "sendNotificationByTopic");
+    const response = await func({ topic, title, body });
+    console.log(response);
+}
+
+export async function pushUserNotification(userId: string): Promise<void> {
+    await initFirebase();
+    const title = "対戦相手が待っています";
+    const body = `${Date.now()} に通知しました`;
+    const func = httpsCallable<unknown, RegisterPushTokenResponse>(functions, "sendNotificationByUserId");
+    const response = await func({ userId, title, body });
+    console.log(response);
+}
