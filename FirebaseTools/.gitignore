@@ -72,3 +72,4 @@ node_modules/
 public/*
 !index.html
 !firebase-messaging-sw.js
+!icon.png

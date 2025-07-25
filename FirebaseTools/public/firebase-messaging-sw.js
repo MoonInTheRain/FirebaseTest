@@ -12,19 +12,37 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 // バックグラウンド通知を受け取ったときの処理
-messaging.onBackgroundMessage(payload => {
-  // 通知がないまま push が発火すると、ブラウザが「更新通知」を出すことがある
-  if (!payload.data) {
-    console.log('空のPushイベントを無視');
+messaging.onBackgroundMessage((payload) => {
+  if (!payload.data || !payload.data.title || !payload.data.body) {
     return;  // 何もしない
   }
-  console.log('[Service Worker] 通知を受信:', payload);
+  console.log('[SW] 背景通知受信:', payload);
+  const { title, body, boardRoomId } = payload.data;
 
-  const notificationTitle = payload.data.title;
-  const notificationOptions = {
-    body: payload.data.body,
+  self.registration.showNotification(title, {
+    body,
     icon: '/icon.png', // 任意のアイコン
-  };
+    data: { boardRoomId },  // 通知クリックで使用
+  });
+});
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+// 通知クリック処理
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        // 同一オリジンのタブが開いていればフォーカス
+        return clientList[0].focus();
+      }
+      if (clients.openWindow) {
+        let targetUrl = self.location.origin;
+        if (event.notification.data?.boardRoomId) {
+            targetUrl += "?boardRoomId=" + event.notification.data.boardRoomId
+        }
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });

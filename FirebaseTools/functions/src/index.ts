@@ -72,7 +72,7 @@ export const sendNotificationByTopic = functions.https.onCall(
     }
 
     const message: admin.messaging.Message = {
-      notification: {title, body},
+      data: {title, body},
       topic,
     };
 
@@ -91,11 +91,12 @@ interface SendNotificationByUserIdRequest {
   userId: string;
   title: string;
   body: string;
+  boardRoomId: string | undefined;
 }
 
 export const sendNotificationByUserId = functions.https.onCall(
   async (request: functions.https.CallableRequest<SendNotificationByUserIdRequest>) => {
-    const {userId, title, body} = request.data;
+    const {userId, title, body, boardRoomId} = request.data;
 
     if (!title || !body || !userId) {
       throw new functions.https.HttpsError("invalid-argument", "必要なパラメータが不足しています");
@@ -103,9 +104,10 @@ export const sendNotificationByUserId = functions.https.onCall(
 
     const token = await getToken(userId);
     const message: admin.messaging.Message = {
-      notification: {title, body},
+      data: {title, body, ...(boardRoomId != undefined ? {boardRoomId} : {})},
       token,
     };
+    console.log("message:", message);
 
     try {
       const res = await admin.messaging().send(message);
