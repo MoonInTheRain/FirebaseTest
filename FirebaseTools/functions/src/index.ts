@@ -119,22 +119,17 @@ export const sendNotificationByUserId = functions.https.onCall(
 );
 
 const getToken = async (userId: string): Promise<string> => {
-  try {
-    const userDoc = await admin.firestore().collection("users").doc(userId).get();
+  const userDoc = await admin.firestore().collection("user_tokens").doc(userId).get();
 
-    if (!userDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "ユーザーが存在しません");
-    }
-
-    const token = userDoc.data()?.token;
-
-    if (!token) {
-      throw new functions.https.HttpsError("not-found", "トークンが登録されていません");
-    }
-
-    return token;
-  } catch (error) {
-    console.error("トークン取得エラー:", error);
-    throw new functions.https.HttpsError("internal", "トークン取得に失敗しました");
+  if (!userDoc.exists) {
+    throw new functions.https.HttpsError("not-found", "ユーザーが存在しません");
   }
+
+  const token = userDoc.data()?.token;
+
+  if (!token) {
+    throw new functions.https.HttpsError("not-found", "トークンが登録されていません");
+  }
+
+  return token;
 };
