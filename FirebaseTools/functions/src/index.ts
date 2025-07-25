@@ -72,7 +72,7 @@ export const sendNotificationByTopic = functions.https.onCall(
     }
 
     const message: admin.messaging.Message = {
-      data: {title, body},
+      notification: {title, body},
       topic,
     };
 
@@ -103,7 +103,7 @@ export const sendNotificationByUserId = functions.https.onCall(
 
     const token = await getToken(userId);
     const message: admin.messaging.Message = {
-      data: {title, body},
+      notification: {title, body},
       token,
     };
 

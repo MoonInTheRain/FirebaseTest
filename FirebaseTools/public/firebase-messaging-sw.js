@@ -14,7 +14,7 @@ const messaging = firebase.messaging();
 // バックグラウンド通知を受け取ったときの処理
 messaging.onBackgroundMessage(payload => {
   // 通知がないまま push が発火すると、ブラウザが「更新通知」を出すことがある
-  if (!event.data) {
+  if (!payload.data) {
     console.log('空のPushイベントを無視');
     return;  // 何もしない
   }
