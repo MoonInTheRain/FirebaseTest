@@ -1,6 +1,6 @@
 import { DataSnapshot } from "firebase/database";
 import { GomokuColor, GomokuDataWithId } from "../Define";
-import { connectGomokuRoom, getRoom, getUserId, setGomokuRoomOnline, updateGomoku } from "../FirebaseManager";
+import { connectGomokuRoom, getGomokuRoom, getUserId, setGomokuRoomOnline, updateGomoku } from "../FirebaseManager";
 
 export class GomokuService {
     private constructor() {}
@@ -11,6 +11,7 @@ export class GomokuService {
         return this._instance;
     }
 
+    private _roomId: string;
     private _room: GomokuDataWithId;
     private _myColor: GomokuColor;
     private unsubscribe: () => void;
@@ -20,12 +21,21 @@ export class GomokuService {
         return this._room;
     }
 
+    public get roomId(): string {
+        return this._room?.roomId ?? this._roomId;
+    }
+
     public get myColor(): GomokuColor {
         return this._myColor;
     }
 
+    public setRoomId(roomId: string): void {
+        this._roomId = roomId;
+    }
+
     public setRoomData(room: GomokuDataWithId): void {
         this._room = room;
+        this.setRoomId(room.roomId);
         const userId = getUserId();
         this._myColor =
             room.players.black == userId ? "black" :
@@ -34,13 +44,13 @@ export class GomokuService {
     }
 
     public startSubscribe(onNewMessage: (snapshot: DataSnapshot, previousChildName: string | null) => unknown): void {
-        this.unsubscribe = connectGomokuRoom(this._room.roomId, onNewMessage);
+        this.unsubscribe = connectGomokuRoom(this.roomId, onNewMessage);
     }
 
     public async connectRoom(): Promise<GomokuDataWithId> {
-        this.disconnect = await setGomokuRoomOnline(this._room.roomId);
+        this.disconnect = await setGomokuRoomOnline(this.roomId);
         // 接続した情報を取り直すためにルームを再取得する。
-        const room = await getRoom(this._room.roomId);
+        const room = await getGomokuRoom(this.roomId);
         this.setRoomData(room);
         return this._room;
     }
@@ -72,5 +82,6 @@ export class GomokuService {
         this.disconnect?.();
         this.disconnect = undefined;
         this._room = undefined;
+        this._roomId = undefined;
     }
 }

@@ -192,7 +192,7 @@ export async function setGomokuRoomOnline(roomId: string): Promise<() => void> {
     }
 }
 
-export async function getRoom(roomId:string): Promise<GomokuDataWithId> {
+export async function getGomokuRoom(roomId:string): Promise<GomokuDataWithId> {
     const roomRef = ref(rdb, `rooms/${roomId}`);
     return (await get(roomRef)).val();
 }
@@ -214,17 +214,23 @@ export async function pushTopicNotificationTest(): Promise<void> {
     await initFirebase();
     const topic = "litegame_notice";
     const title = "test";
-    const body = "てすとです。" + Date.now();
+    const body = "てすとです。" + getTimeString();
     const func = httpsCallable<unknown, RegisterPushTokenResponse>(functions, "sendNotificationByTopic");
     const response = await func({ topic, title, body });
     console.log(response);
 }
 
-export async function pushUserNotification(userId: string): Promise<void> {
+export async function pushUserNotification(userId: string, boardRoomId: string): Promise<void> {
     await initFirebase();
     const title = "対戦相手が待っています";
-    const body = `${Date.now()} に通知しました`;
+    const body = `${getTimeString()} に通知しました`;
     const func = httpsCallable<unknown, RegisterPushTokenResponse>(functions, "sendNotificationByUserId");
-    const response = await func({ userId, title, body });
+    const response = await func({ userId, title, body, boardRoomId });
     console.log(response);
+}
+
+function getTimeString(): string {
+    const date = new Date();
+    return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ` + 
+           `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
 }

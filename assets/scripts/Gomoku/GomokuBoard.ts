@@ -153,6 +153,7 @@ export class GomokuBoard extends Component {
     private onClickBoard(x: number, y: number): void {
         if (!this.myTurn || this.isFinish) { return; }
         const boardData = this.board.map(y => y.map(x => x.getData()));
+        if (boardData[x][y] != "none") { return; }
         boardData[x][y] = this.myColor;
         this.roomData.board = boardData;
         this.roomData.turn = GomokuService.getOpponentColor(this.myColor);
@@ -239,7 +240,7 @@ export class GomokuBoard extends Component {
 
     private callPlayer(userId: string | undefined) {
         if (userId == undefined) { return; }
-        pushUserNotification(userId);
+        pushUserNotification(userId, this.roomData.roomId);
     }
 }
 
