@@ -27,12 +27,17 @@ import * as admin from "firebase-admin";
 // this will be the maximum concurrent request count.
 functions.setGlobalOptions({maxInstances: 10});
 
+// adminとして初期化しているので、書き込み不可のDBにも書き込み可能。
 admin.initializeApp();
 
+/**
+ * registerPushTokenのリクエスト
+ */
 interface RegisterPushTokenRequest {
   token: string;
 }
 
+// トークンをFirestoreに保存し、トピックに登録
 export const registerPushToken = functions.https.onCall(
   async (request: functions.https.CallableRequest<RegisterPushTokenRequest>) => {
     const {token} = request.data;
@@ -57,12 +62,19 @@ export const registerPushToken = functions.https.onCall(
   }
 );
 
+/**
+ * sendNotificationByTopicのリクエスト
+ */
+interface RegisterPushTokenRequest {
+  token: string;
+}
 interface SendNotificationByTopicRequest {
   topic: string;
   title: string;
   body: string;
 }
 
+// トピックに対して通知を行う。
 export const sendNotificationByTopic = functions.https.onCall(
   async (request: functions.https.CallableRequest<SendNotificationByTopicRequest>) => {
     const {topic, title, body} = request.data;
@@ -87,6 +99,9 @@ export const sendNotificationByTopic = functions.https.onCall(
   }
 );
 
+/**
+ * sendNotificationByUserIdのリクエスト
+ */
 interface SendNotificationByUserIdRequest {
   userId: string;
   title: string;
@@ -94,6 +109,7 @@ interface SendNotificationByUserIdRequest {
   boardRoomId: string | undefined;
 }
 
+// 特定ユーザーに対して通知を行う。
 export const sendNotificationByUserId = functions.https.onCall(
   async (request: functions.https.CallableRequest<SendNotificationByUserIdRequest>) => {
     const {userId, title, body, boardRoomId} = request.data;
@@ -120,6 +136,7 @@ export const sendNotificationByUserId = functions.https.onCall(
   }
 );
 
+// Firebaseから該当ユーザーのトークンを取得する
 const getToken = async (userId: string): Promise<string> => {
   const userDoc = await admin.firestore().collection("user_tokens").doc(userId).get();
 

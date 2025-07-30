@@ -11,9 +11,6 @@ export class ChatItem extends Component {
     @property(Node)
     private isTheirs: Node;
 
-    start() {
-    }
-
     public setData(data: ChatData): void {
         this.label.string = data.message;
         this.isMine.active = data.isMine;

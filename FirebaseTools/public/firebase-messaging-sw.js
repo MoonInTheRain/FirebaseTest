@@ -19,6 +19,7 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[SW] 背景通知受信:', payload);
   const { title, body, boardRoomId } = payload.data;
 
+  // 通知を表示する
   self.registration.showNotification(title, {
     body,
     icon: '/icon.png', // 任意のアイコン
@@ -38,6 +39,7 @@ self.addEventListener('notificationclick', (event) => {
       }
       if (clients.openWindow) {
         let targetUrl = self.location.origin;
+        // boardRoomIdがあれば、クエリパラメータとして渡す
         if (event.notification.data?.boardRoomId) {
             targetUrl += "?boardRoomId=" + event.notification.data.boardRoomId
         }

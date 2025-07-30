@@ -2,6 +2,9 @@ import { _decorator, Button, Component, director, Node } from 'cc';
 import { MakeEventHandler, UIHandler } from './Utils';
 const { ccclass, property } = _decorator;
 
+/**
+ * ボタンにシーン遷移するイベントを付与するコンポーネント
+ */
 @ccclass('MoveButton')
 export class MoveButton extends Component {
     @property

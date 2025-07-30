@@ -5,6 +5,9 @@ import { MakeEventHandler, UIHandler } from '../Utils';
 import { GomokuRoomItem } from './GomokuRoomItem';
 const { ccclass, property } = _decorator;
 
+/**
+ * 五目並べのルーム一覧表示
+ */
 @ccclass('GomokuRoomList')
 export class GomokuRoomList extends Component {
 
@@ -36,6 +39,10 @@ export class GomokuRoomList extends Component {
         this.itemBase.node.active = false;
     }
 
+    /**
+     * 新しいルームを追加する
+     * @returns 
+     */
     @UIHandler
     async addItem(): Promise<void> {
         if (!this.input.string) {

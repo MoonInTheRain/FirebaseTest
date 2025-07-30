@@ -2,6 +2,9 @@ import { DataSnapshot } from "firebase/database";
 import { GomokuColor, GomokuDataWithId } from "../Define";
 import { connectGomokuRoom, getGomokuRoom, getUserId, setGomokuRoomOnline, updateGomoku } from "../FirebaseManager";
 
+/**
+ * 五目並べに関するサービス
+ */
 export class GomokuService {
     private constructor() {}
 

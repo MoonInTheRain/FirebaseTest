@@ -5,6 +5,9 @@ import { GomokuService } from './GomokuService';
 import { getUserId } from '../FirebaseManager';
 const { ccclass, property } = _decorator;
 
+/**
+ * 五目並べのルームの表示
+ */
 @ccclass('GomokuRoomItem')
 export class GomokuRoomItem extends Component {
     @property(Label)
@@ -22,10 +25,15 @@ export class GomokuRoomItem extends Component {
         this.joinButton.clickEvents.push(MakeEventHandler(this, this.join));
     }
 
+    /**
+     * 表示更新
+     * @param data 
+     */
     public setData(data: GomokuDataWithId): void {
         this.label.string = data.name;
         this.data = data;
 
+        // 参加状況によってボタンの表示を変える
         const userId = getUserId();
         if (data.players.black == userId || data.players.white == userId) {
             this.buttonLabel.string = "入室";
@@ -39,8 +47,12 @@ export class GomokuRoomItem extends Component {
         }
     }
 
+    /**
+     * ボタン押下時の挙動
+     */
     @UIHandler
     private async join(): Promise<void> {
+        // 参加する場合、参加者にデータを追加してから遷移する
         if (this.status == "join") {
             await GomokuService.instance.joinRoom(this.data);
         }

@@ -7,6 +7,10 @@ import { GomokuService } from './GomokuService';
 import { MakeEventHandler, UIHandler } from '../Utils';
 const { ccclass, property } = _decorator;
 
+/**
+ * 五目並べのゲーム本体。
+ * 勝敗の判定もサーバーではなくここで行う。
+ */
 @ccclass('GomokuBoard')
 export class GomokuBoard extends Component {
     @property(GomokuCell)
@@ -51,6 +55,7 @@ export class GomokuBoard extends Component {
         this.whiteWin.active = false;
         this.initBoardCell();
 
+        // データ変化の購読を開始
         GomokuService.instance.startSubscribe(data => this.onChangeData(data));
         this.roomData = await GomokuService.instance.connectRoom();
 
@@ -58,16 +63,21 @@ export class GomokuBoard extends Component {
         this.playerColorBlack.active = this.myColor == "black";
         this.playerColorWhite.active = this.myColor == "white";
 
+        // 表示を更新
         this.updateTurnView(this.roomData.turn);
         this.updateBoard(this.roomData.board);
         this.updatePlayers(this.roomData.players);
         this.updateConnect(this.roomData.connect);
         this.updateWinner(this.roomData.winner);
 
+        // ボタンにタッチイベントを付与
         this.callBlackButton.clickEvents.push(MakeEventHandler(this, this.onClickCallBlack));
         this.callWhiteButton.clickEvents.push(MakeEventHandler(this, this.onClickCallWhite));
     }
 
+    /**
+     * マスの初期化
+     */
     private initBoardCell(): void {
         this.baseCell.node.active = true;
         for (let x = 0; x < 15; x++) {
@@ -76,7 +86,7 @@ export class GomokuBoard extends Component {
                 const newNode = instantiate(this.baseCell.node);
                 newNode.setParent(this.baseCell.node.parent);
                 const cell = newNode.getComponent(GomokuCell);
-                cell.init(() => this.onClickBoard(x, y));
+                cell.init(() => this.onClickCell(x, y));
                 newLine.push(cell);
             }
             this.board.push(newLine);
@@ -84,6 +94,11 @@ export class GomokuBoard extends Component {
         this.baseCell.node.active = false;
     }
 
+    /**
+     * 引数から、白黒どちらのターンかの表示を更新する
+     * @param val 
+     * @returns 
+     */
     private updateTurnView(val: GomokuColor): void {
         this.roomData.turn = val;
         if (this.myColor == "none") {
@@ -96,6 +111,11 @@ export class GomokuBoard extends Component {
         this.opponentTurn.active = !this.myTurn;
     }
 
+    /**
+     * 引数から、盤上の表示を更新する
+     * @param value 
+     * @returns 
+     */
     private updateBoard(value: GomokuColor[][]): void {
         if (value == null) { return; }
         this.roomData.board = value;
@@ -106,11 +126,19 @@ export class GomokuBoard extends Component {
         }
     }
 
+    /**
+     * 引数から、プレイヤーの参加情報の表示を更新する
+     * @param data 
+     */
     private updatePlayers(data: GomokuPlayers): void {
         this.roomData.players = data;
         this.waitOpponent.active = data.black == null || data.white == null;
     }
 
+    /**
+     * 引数から、勝者がいるかのチェックと表示を更新する
+     * @param data 
+     */
     private updateWinner(data: GomokuColor | undefined): void {
         if (data == "white") {
             this.whiteWin.active = true;
@@ -121,6 +149,11 @@ export class GomokuBoard extends Component {
         }
     }
 
+    /**
+     * 引数から、プレイヤーの接続状態の表示を更新する
+     * @param data 
+     * @returns 
+     */
     private async updateConnect(data: GomokuConnect): Promise<void> {
         if (data == undefined) {
             this.connectBlack.string = "黒：オフライン";
@@ -150,7 +183,13 @@ export class GomokuBoard extends Component {
         }
     }
 
-    private onClickBoard(x: number, y: number): void {
+    /**
+     * マスをクリックした際の挙動
+     * @param x 
+     * @param y 
+     * @returns 
+     */
+    private onClickCell(x: number, y: number): void {
         if (!this.myTurn || this.isFinish) { return; }
         const boardData = this.board.map(y => y.map(x => x.getData()));
         if (boardData[x][y] != "none") { return; }
@@ -161,10 +200,17 @@ export class GomokuBoard extends Component {
         GomokuService.instance.updateGomoku(this.roomData);
     }
 
+    /**
+     * シーンから抜ける際、購読を停止する
+     */
     protected onDestroy(): void {
         GomokuService.instance.disconnectRoom();
     }
 
+    /**
+     * 購読したデータを元に表示を更新する。
+     * @param data 
+     */
     private onChangeData(data: DataSnapshot): void {
         const value = data.val();
         switch (data.key) {
@@ -191,6 +237,11 @@ export class GomokuBoard extends Component {
         }
     }
 
+    /**
+     * 勝者がいるかチェック
+     * @param board 
+     * @returns いれば、勝者の色
+     */
     private checkWinner(board: GomokuColor[][]): GomokuColor {
         const directions = [
             { dx: 1, dy: 0 },  // 横
