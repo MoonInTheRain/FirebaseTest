@@ -1,6 +1,6 @@
 import { _decorator, Component, director, Node } from 'cc';
-import { getGomokuRoom, initFirebase } from './FirebaseManager';
-import { GomokuService } from './Gomoku/GomokuService';
+import { getGomokuRoom, initFirebase } from '../FirebaseManager';
+import { GomokuService } from '../Gomoku/GomokuService';
 const { ccclass, property } = _decorator;
 
 @ccclass('Boot')

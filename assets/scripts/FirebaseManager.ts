@@ -2,13 +2,14 @@ import { Auth } from "@firebase/auth/dist/browser-cjs";
 import { Firestore, Unsubscribe } from "@firebase/firestore";
 import { FirebaseApp } from "firebase/app";
 import { Database, DataSnapshot } from "firebase/database";
-import { GomokuColor, GomokuData, GomokuDataWithId } from "./Define";
+import { GomokuData, GomokuDataWithId } from "./Define";
 import { initializeApp } from "./FirebaseWrapper/FirebaseApp";
 import { getAuth, onAuthStateChanged, signInAnonymously } from "./FirebaseWrapper/FirebaseAuth";
 import { get, getDatabase, off, onChildChanged, onDisconnect, push, ref, remove, serverTimestampAtDB, set, update } from "./FirebaseWrapper/FirebaseDatabase";
 import { addDoc, collection, doc, getDoc, getDocs, getFirestore, onSnapshot, orderBy, query, serverTimestamp, setDoc } from "./FirebaseWrapper/FirebaseStore";
 import { getMessaging, getToken } from "./FirebaseWrapper/FirebaseMessage";
 import { Functions, getFunctions, httpsCallable } from "./FirebaseWrapper/FirebaseFunctions";
+import { fetchAndActivate, getRemoteConfig, getValue, RemoteConfig } from "./FirebaseWrapper/FirebaseRemoteConfig";
 
 /**
  * Firebaseのプロジェクトにアクセスするための情報
@@ -24,7 +25,13 @@ const firebaseConfig = {
     messagingSenderId: "213956204660",
 };
 
-let app: FirebaseApp, auth: Auth, db: Firestore, rdb: Database, functions: Functions;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
+let rdb: Database;
+let functions: Functions;
+let config: RemoteConfig;
+
 let currentUID: string = null;
 
 /**
@@ -342,4 +349,31 @@ function getTimeString(): string {
     const date = new Date();
     return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ` + 
            `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+}
+
+// ------------------------------------------------
+// --------------- バージョン情報周り ---------------
+// ------------------------------------------------
+
+/**
+ * バージョン情報を取得
+ * @returns 
+ */
+export async function getAppVersion(): Promise<string> {
+    await initFirebase();
+    if (!config) {
+        config = getRemoteConfig(app);
+        config.settings = {
+            minimumFetchIntervalMillis: 3600000,
+            fetchTimeoutMillis: 60000
+        };
+        config.defaultConfig = {
+            "APP_VERSION" : "0.0"
+        }
+    }
+    const res = await fetchAndActivate(config);
+    if (res) {
+        // フェッチした時だけtrue
+    }
+    return getValue(config, "APP_VERSION").asString();
 }
